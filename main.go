@@ -6,6 +6,7 @@ import (
 	"playtz-api/database"
 	"playtz-api/handlers"
 	"playtz-api/middleware"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -55,9 +56,48 @@ func main() {
 
 	// Configure CORS middleware
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Content-Type", "Authorization"}
+	
+	// Get allowed origins from environment or use defaults
+	allowedOrigins := os.Getenv("CORS_ORIGINS")
+	if allowedOrigins == "" {
+		// Default: allow localhost for development and common ports
+		allowedOrigins = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:8080"
+	}
+	
+	// Parse allowed origins
+	origins := []string{}
+	for _, origin := range strings.Split(allowedOrigins, ",") {
+		origins = append(origins, strings.TrimSpace(origin))
+	}
+	config.AllowOrigins = origins
+	
+	// Enable credentials (cookies, authorization headers)
+	config.AllowCredentials = true
+	
+	// Allow methods
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
+	
+	// Allow headers
+	config.AllowHeaders = []string{
+		"Content-Type",
+		"Authorization",
+		"Accept",
+		"Origin",
+		"X-Requested-With",
+		"Access-Control-Request-Method",
+		"Access-Control-Request-Headers",
+	}
+	
+	// Expose headers
+	config.ExposeHeaders = []string{
+		"Content-Length",
+		"Content-Type",
+		"Authorization",
+	}
+	
+	// Max age for preflight requests (24 hours)
+	config.MaxAge = 86400
+	
 	r.Use(cors.New(config))
 
 	// Serve static files (HTML pages)
