@@ -90,7 +90,9 @@ func Login(c *gin.Context) {
 	)
 
 	// Set session cookie
-	c.SetCookie("session_id", sessionID, 600, "/", "", false, true) // 10 minutes, httpOnly
+	// For cross-origin (Vercel), we need SameSite=None and Secure=true
+	// Using Header directly to ensure SameSite=None is set correctly
+	c.Header("Set-Cookie", "session_id="+sessionID+"; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=None")
 
 	c.JSON(200, LoginResponse{
 		Success:   true,
@@ -108,8 +110,9 @@ func Logout(c *gin.Context) {
 		sessionStore.DeleteSession(sessionID)
 	}
 
-	// Clear cookie
-	c.SetCookie("session_id", "", -1, "/", "", false, true)
+	// Clear cookie (with SameSite=None for cross-origin)
+	c.SetCookie("session_id", "", -1, "/", "", true, true)
+	c.Header("Set-Cookie", "session_id=; Path=/; Max-Age=-1; HttpOnly; Secure; SameSite=None")
 
 	c.JSON(200, gin.H{"message": "Logged out successfully"})
 }
