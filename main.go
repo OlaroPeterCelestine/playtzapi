@@ -51,6 +51,12 @@ func main() {
 		// Don't exit on migration failure - tables might already exist
 	}
 
+	// Seed admin user (creates if doesn't exist)
+	if err := database.SeedAdmin(); err != nil {
+		fmt.Printf("WARNING: Failed to seed admin user: %v. Continuing anyway...\n", err)
+		// Don't exit on seed failure - admin might already exist
+	}
+
 	// Initialize Gin router
 	r := gin.Default()
 
@@ -60,8 +66,8 @@ func main() {
 	// Get allowed origins from environment or use defaults
 	allowedOrigins := os.Getenv("CORS_ORIGINS")
 	if allowedOrigins == "" {
-		// Default: allow localhost for development and common ports
-		allowedOrigins = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:8080"
+		// Default: allow localhost for development and Vercel production
+		allowedOrigins = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:8080,https://playtzadmin.vercel.app"
 	}
 	
 	// Parse allowed origins
