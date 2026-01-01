@@ -201,7 +201,12 @@
             loading.classList.add('show');
 
             try {
-                const response = await fetch('/api/v1/auth/login', {
+                // Use full API URL for cross-origin requests
+                const API_BASE = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:8080/api/v1'
+                    : 'https://playtzapi-production.up.railway.app/api/v1';
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -230,11 +235,16 @@
         });
 
         // Check if already logged in
-        fetch('/api/v1/auth/me', {
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8080/api/v1'
+            : 'https://playtzapi-production.up.railway.app/api/v1';
+        
+        fetch(`${API_BASE}/auth/me`, {
             credentials: 'include'
         })
-        .then(res => {
-            if (res.ok) {
+        .then(res => res.json())
+        .then(data => {
+            if (data.authenticated) {
                 window.location.href = '/admin/dashboard';
             }
         })

@@ -196,8 +196,16 @@
         // Load dashboard data
         async function loadDashboard() {
             try {
-                const response = await fetch('/api/v1/admin/dashboard', {
-                    credentials: 'include'
+                // Use full API URL for cross-origin requests
+                const API_BASE = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:8080/api/v1'
+                    : 'https://playtzapi-production.up.railway.app/api/v1';
+                
+                const response = await fetch(`${API_BASE}/admin/dashboard`, {
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
                 });
 
                 if (response.status === 401) {
@@ -343,13 +351,22 @@
 
         async function logout() {
             try {
-                await fetch('/api/v1/auth/logout', {
+                // Use full API URL for cross-origin requests
+                const API_BASE = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:8080/api/v1'
+                    : 'https://playtzapi-production.up.railway.app/api/v1';
+                
+                await fetch(`${API_BASE}/auth/logout`, {
                     method: 'POST',
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
                 });
             } catch (error) {
                 console.error('Logout error:', error);
             }
+            // Clear any local storage/session data
             window.location.href = '/admin/login';
         }
 
