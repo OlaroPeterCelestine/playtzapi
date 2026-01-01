@@ -1,0 +1,8 @@
+# Railway ignore file
+.env
+.env.local
+*.log
+server.log
+test_endpoints.sh
+/tmp/
+

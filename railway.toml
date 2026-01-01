@@ -6,7 +6,7 @@ builder = "nixpacks"
 buildCommand = "go mod download && go mod tidy && go build -o main ."
 
 [deploy]
-startCommand = "chmod +x deploy.sh && ./deploy.sh"
+startCommand = "./main"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
