@@ -218,12 +218,16 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Redirect to admin dashboard
+                    // Success - redirect to admin dashboard
                     window.location.href = '/admin/dashboard';
                 } else {
-                    // Show error
-                    errorMessage.textContent = data.error || 'Login failed. Please try again.';
+                    // Show error message from API
+                    const errorMsg = data.error || data.message || 'Login failed. Please check your credentials and try again.';
+                    errorMessage.textContent = errorMsg;
                     errorMessage.classList.add('show');
+                    
+                    // Clear password field for security
+                    document.getElementById('password').value = '';
                 }
             } catch (error) {
                 errorMessage.textContent = 'Network error. Please try again.';

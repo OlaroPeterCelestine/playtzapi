@@ -110,6 +110,7 @@ func Logout(c *gin.Context) {
 		sessionID = c.GetHeader("X-Session-ID")
 	}
 
+	// Delete session from store if it exists
 	if sessionID != "" {
 		sessionStore := auth.GetSessionStore()
 		sessionStore.DeleteSession(sessionID)
@@ -117,10 +118,17 @@ func Logout(c *gin.Context) {
 
 	// Clear cookie - use Header directly for cross-origin support
 	// Set multiple cookie clearing headers to ensure it works across browsers
+	// Also try to clear with different domain settings
 	c.Header("Set-Cookie", "session_id=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None")
 	c.Header("Set-Cookie", "session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None")
+	
+	// Additional cookie clearing for better compatibility
+	c.SetCookie("session_id", "", -1, "/", "", true, true)
 
-	c.JSON(200, gin.H{"message": "Logged out successfully"})
+	c.JSON(200, gin.H{
+		"message": "Logged out successfully",
+		"success": true,
+	})
 }
 
 // GetCurrentUserOptional returns the current authenticated user if available, or null if not authenticated
