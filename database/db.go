@@ -20,26 +20,14 @@ func InitDB() error {
 	// Check if DATABASE_URL is provided (Railway/Heroku style)
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL != "" {
-		// Parse PostgreSQL connection string
-		// Format: postgresql://user:password@host:port/database
+		// Use DATABASE_URL directly - lib/pq supports PostgreSQL URLs
+		connStr = databaseURL
+		
+		// Extract database name for logging
 		parsedURL, err := url.Parse(databaseURL)
-		if err != nil {
-			return fmt.Errorf("failed to parse DATABASE_URL: %w", err)
+		if err == nil {
+			dbName = strings.TrimPrefix(parsedURL.Path, "/")
 		}
-
-		// Extract components
-		user := parsedURL.User.Username()
-		password, _ := parsedURL.User.Password()
-		host := parsedURL.Hostname()
-		port := parsedURL.Port()
-		if port == "" {
-			port = "5432"
-		}
-		dbName = strings.TrimPrefix(parsedURL.Path, "/")
-
-		// Build connection string
-		connStr = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require",
-			host, port, user, password, dbName)
 	} else {
 		// Fallback to individual environment variables
 		dbHost := os.Getenv("DB_HOST")

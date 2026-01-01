@@ -109,6 +109,20 @@ func GetUserByID(c *gin.Context) {
 	c.JSON(200, user)
 }
 
+// generateDefaultPassword generates a secure random password
+func generateDefaultPassword() (string, error) {
+	// Generate 12 random bytes
+	bytes := make([]byte, 12)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	// Convert to base64 and take first 12 characters, then add some special chars
+	password := base64.URLEncoding.EncodeToString(bytes)[:12]
+	// Add a number and special character for complexity
+	password = password + "1!"
+	return password, nil
+}
+
 // CreateUser creates a new user
 func CreateUser(c *gin.Context) {
 	var req CreateUserRequest
@@ -117,8 +131,21 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Generate default password if not provided
+	password := req.Password
+	passwordChangeRequired := false
+	if password == "" {
+		var err error
+		password, err = generateDefaultPassword()
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to generate default password"})
+			return
+		}
+		passwordChangeRequired = true
+	}
+
 	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to hash password"})
 		return
@@ -126,8 +153,8 @@ func CreateUser(c *gin.Context) {
 
 	userID := uuid.New().String()
 	_, err = database.DB.Exec(
-		"INSERT INTO users (id, email, username, password_hash, first_name, last_name, role_id, active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		userID, req.Email, req.Username, string(hashedPassword), req.FirstName, req.LastName, req.RoleID, true,
+		"INSERT INTO users (id, email, username, password_hash, first_name, last_name, role_id, active, password_change_required) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		userID, req.Email, req.Username, string(hashedPassword), req.FirstName, req.LastName, req.RoleID, true, passwordChangeRequired,
 	)
 
 	if err != nil {
@@ -159,7 +186,18 @@ func CreateUser(c *gin.Context) {
 		user.RoleName = *roleName
 	}
 
-	c.JSON(201, user)
+	// Prepare response - include default password if it was generated
+	if passwordChangeRequired {
+		response := CreateUserResponse{
+			User:            user,
+			DefaultPassword: password,
+			Message:         "User created with default password. Please change it on first login.",
+		}
+		c.JSON(201, response)
+	} else {
+		// Return just the user if password was provided
+		c.JSON(201, user)
+	}
 }
 
 // UpdateUser updates an existing user

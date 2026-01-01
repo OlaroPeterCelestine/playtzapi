@@ -252,6 +252,21 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_merchandise ON order_items(merchandise_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_merchandise ON order_items(order_id, merchandise_id);
 
+-- ============================================
+-- MIGRATIONS FOR EXISTING TABLES
+-- ============================================
+
+-- Add password_change_required column to users table (if not exists)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'password_change_required'
+    ) THEN
+        ALTER TABLE users ADD COLUMN password_change_required BOOLEAN DEFAULT false;
+    END IF;
+END $$;
+
 -- Full-text search indexes (using GIN for better text search performance)
 -- Note: These require the pg_trgm extension for trigram matching
 -- CREATE EXTENSION IF NOT EXISTS pg_trgm;

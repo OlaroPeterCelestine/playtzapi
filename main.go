@@ -114,6 +114,7 @@ func main() {
 			auth.POST("/login", handlers.Login)
 			auth.POST("/logout", handlers.Logout)
 			auth.GET("/me", middleware.RequireAuth(), handlers.GetCurrentUser)
+			auth.POST("/change-password", middleware.RequireAuth(), handlers.ChangePassword)
 		}
 
 		// Admin API routes (protected)

@@ -155,3 +155,69 @@ func GetCurrentUser(c *gin.Context) {
 	c.JSON(200, user)
 }
 
+// ChangePasswordRequest represents password change request
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=6"`
+}
+
+// ChangePassword handles password change for authenticated users
+func ChangePassword(c *gin.Context) {
+	session, exists := c.Get("session")
+	if !exists {
+		c.JSON(401, gin.H{"error": "Not authenticated"})
+		return
+	}
+
+	sess := session.(*auth.Session)
+
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Current password and new password (min 6 characters) are required"})
+		return
+	}
+
+	// Get current password hash from database
+	var passwordHash string
+	err := database.DB.QueryRow(
+		"SELECT password_hash FROM users WHERE id = $1",
+		sess.UserID,
+	).Scan(&passwordHash)
+
+	if err == sql.ErrNoRows {
+		c.JSON(404, gin.H{"error": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch user"})
+		return
+	}
+
+	// Verify current password
+	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.CurrentPassword))
+	if err != nil {
+		c.JSON(401, gin.H{"error": "Current password is incorrect"})
+		return
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to hash new password"})
+		return
+	}
+
+	// Update password and clear password_change_required flag
+	_, err = database.DB.Exec(
+		"UPDATE users SET password_hash = $1, password_change_required = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+		string(hashedPassword), sess.UserID,
+	)
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Password changed successfully"})
+}
+
