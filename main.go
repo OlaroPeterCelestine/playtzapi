@@ -199,34 +199,6 @@ func main() {
 		protected.PUT("/careers/:id", handlers.UpdateCareer)
 		protected.DELETE("/careers/:id", handlers.DeleteCareer)
 
-		// News routes - All protected
-		api.GET("/news", handlers.GetNews)
-		api.GET("/news/:id", handlers.GetNewsByID)
-		api.POST("/news", handlers.CreateNews)
-		api.PUT("/news/:id", handlers.UpdateNews)
-		api.DELETE("/news/:id", handlers.DeleteNews)
-
-		// Events routes - All protected
-		api.GET("/events", handlers.GetEvents)
-		api.GET("/events/:id", handlers.GetEventByID)
-		api.POST("/events", handlers.CreateEvent)
-		api.PUT("/events/:id", handlers.UpdateEvent)
-		api.DELETE("/events/:id", handlers.DeleteEvent)
-
-		// Merchandise routes - All protected
-		api.GET("/merch", handlers.GetMerch)
-		api.GET("/merch/:id", handlers.GetMerchByID)
-		api.POST("/merch", handlers.CreateMerch)
-		api.PUT("/merch/:id", handlers.UpdateMerch)
-		api.DELETE("/merch/:id", handlers.DeleteMerch)
-
-		// Careers routes - All protected
-		api.GET("/careers", handlers.GetCareers)
-		api.GET("/careers/:id", handlers.GetCareerByID)
-		api.POST("/careers", handlers.CreateCareer)
-		api.PUT("/careers/:id", handlers.UpdateCareer)
-		api.DELETE("/careers/:id", handlers.DeleteCareer)
-
 		// Shopping Cart routes - All protected
 		protected.GET("/cart", handlers.GetCart)
 		protected.POST("/cart/add", handlers.AddToCart)
@@ -283,10 +255,14 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Printf("🚀 Server starting on port %s\n", port)
-	fmt.Printf("✅ Health check available at http://0.0.0.0:%s/health\n", port)
+	// Bind to 0.0.0.0 to accept connections from all interfaces (required for Railway)
+	bindAddr := "0.0.0.0:" + port
+	
+	fmt.Printf("🚀 Server starting on %s\n", bindAddr)
+	fmt.Printf("✅ Health check available at http://%s/health\n", bindAddr)
+	fmt.Printf("📊 Database connected: %v\n", database.DB != nil)
 
-	if err := r.Run(":" + port); err != nil {
+	if err := r.Run(bindAddr); err != nil {
 		fmt.Printf("FATAL: Server failed to start: %v\n", err)
 		os.Exit(1)
 	}
