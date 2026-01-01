@@ -6,33 +6,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RequireAuth middleware checks if user is authenticated
+// RequireAuth middleware checks if user is authenticated using JWT tokens
 func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sessionID, err := c.Cookie("session_id")
-		if err != nil || sessionID == "" {
-			// Try to get from header as fallback
-			sessionID = c.GetHeader("X-Session-ID")
-			if sessionID == "" {
+		// Try to get token from cookie
+		token, err := c.Cookie("token")
+		if err != nil || token == "" {
+			// Try Authorization header as fallback
+			authHeader := c.GetHeader("Authorization")
+			token = auth.ExtractTokenFromHeader(authHeader)
+			if token == "" {
 				c.JSON(401, gin.H{"error": "Authentication required"})
 				c.Abort()
 				return
 			}
 		}
 
-		sessionStore := auth.GetSessionStore()
-		session, exists := sessionStore.GetSession(sessionID)
-		if !exists {
-			c.JSON(401, gin.H{"error": "Invalid or expired session"})
+		// Validate JWT token
+		claims, err := auth.ValidateToken(token)
+		if err != nil {
+			c.JSON(401, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		// Store session in context
-		c.Set("session", session)
-		c.Set("user_id", session.UserID)
-		c.Set("role_id", session.RoleID)
-		c.Set("role_name", session.RoleName)
+		// Store claims in context
+		c.Set("user_id", claims.UserID)
+		c.Set("username", claims.Username)
+		c.Set("email", claims.Email)
+		c.Set("role_id", claims.RoleID)
+		c.Set("role_name", claims.RoleName)
+		c.Set("claims", claims)
 
 		c.Next()
 	}

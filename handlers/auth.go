@@ -20,7 +20,8 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Success   bool   `json:"success"`
 	Message   string `json:"message"`
-	SessionID string `json:"session_id,omitempty"`
+	Token     string `json:"token,omitempty"`     // JWT token
+	SessionID string `json:"session_id,omitempty"` // Deprecated: use token instead
 	User      *User  `json:"user,omitempty"`
 }
 
@@ -79,50 +80,44 @@ func Login(c *gin.Context) {
 	user.CreatedAt = createdAt.Format(time.RFC3339)
 	user.UpdatedAt = updatedAt.Format(time.RFC3339)
 
-	// Create session
-	sessionStore := auth.GetSessionStore()
-	sessionID := sessionStore.CreateSession(
+	// Generate JWT token
+	token, err := auth.GenerateToken(
 		user.ID,
 		user.Username,
 		user.Email,
 		user.RoleID,
 		user.RoleName,
 	)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to generate token"})
+		return
+	}
 
-	// Set session cookie
+	// Set JWT token as cookie
 	// For cross-origin (Vercel), we need SameSite=None and Secure=true
-	// Using Header directly to ensure SameSite=None is set correctly
-	c.Header("Set-Cookie", "session_id="+sessionID+"; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=None")
+	c.Header("Set-Cookie", "token="+token+"; Path=/; Max-Age=86400; HttpOnly; Secure; SameSite=None")
 
 	c.JSON(200, LoginResponse{
 		Success:   true,
 		Message:   "Login successful",
-		SessionID: sessionID,
+		Token:     token,
+		SessionID: token, // Return token as session_id for backward compatibility
 		User:      &user,
 	})
 }
 
 // Logout handles user logout
 func Logout(c *gin.Context) {
-	// Try to get session from cookie or header
-	sessionID, err := c.Cookie("session_id")
-	if err != nil || sessionID == "" {
-		sessionID = c.GetHeader("X-Session-ID")
-	}
-
-	// Delete session from store if it exists
-	if sessionID != "" {
-		sessionStore := auth.GetSessionStore()
-		sessionStore.DeleteSession(sessionID)
-	}
-
-	// Clear cookie - use Header directly for cross-origin support
+	// Clear JWT token cookie
 	// Set multiple cookie clearing headers to ensure it works across browsers
-	// Also try to clear with different domain settings
+	c.Header("Set-Cookie", "token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None")
+	c.Header("Set-Cookie", "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None")
+	
+	// Also clear old session_id cookie for backward compatibility
 	c.Header("Set-Cookie", "session_id=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None")
-	c.Header("Set-Cookie", "session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None")
 	
 	// Additional cookie clearing for better compatibility
+	c.SetCookie("token", "", -1, "/", "", true, true)
 	c.SetCookie("session_id", "", -1, "/", "", true, true)
 
 	c.JSON(200, gin.H{
@@ -134,28 +129,29 @@ func Logout(c *gin.Context) {
 // GetCurrentUserOptional returns the current authenticated user if available, or null if not authenticated
 // This prevents 401 errors on login page when checking auth status
 func GetCurrentUserOptional(c *gin.Context) {
-	// Try to get session from cookie or header
-	sessionID, err := c.Cookie("session_id")
-	if err != nil || sessionID == "" {
-		sessionID = c.GetHeader("X-Session-ID")
+	// Try to get token from cookie or Authorization header
+	token, err := c.Cookie("token")
+	if err != nil || token == "" {
+		// Try Authorization header
+		authHeader := c.GetHeader("Authorization")
+		token = auth.ExtractTokenFromHeader(authHeader)
 	}
 
-	if sessionID == "" {
+	if token == "" {
 		// Not authenticated - return 200 with null (not an error)
 		c.JSON(200, gin.H{"authenticated": false, "user": nil})
 		return
 	}
 
-	// Check if session exists
-	sessionStore := auth.GetSessionStore()
-	session, exists := sessionStore.GetSession(sessionID)
-	if !exists {
-		// Session invalid or expired - return 200 with null (not an error)
+	// Validate JWT token
+	claims, err := auth.ValidateToken(token)
+	if err != nil {
+		// Token invalid or expired - return 200 with null (not an error)
 		c.JSON(200, gin.H{"authenticated": false, "user": nil})
 		return
 	}
 
-	// Get fresh user data
+	// Get fresh user data from database
 	var user User
 	var createdAt, updatedAt time.Time
 	var roleName *string
@@ -166,7 +162,7 @@ func GetCurrentUserOptional(c *gin.Context) {
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
 		WHERE u.id = $1
-	`, session.UserID).Scan(
+	`, claims.UserID).Scan(
 		&user.ID, &user.Email, &user.Username,
 		&user.FirstName, &user.LastName, &user.RoleID, &user.Active,
 		&createdAt, &updatedAt, &roleName,
@@ -190,13 +186,14 @@ func GetCurrentUserOptional(c *gin.Context) {
 
 // GetCurrentUser returns the current authenticated user (requires auth)
 func GetCurrentUser(c *gin.Context) {
-	session, exists := c.Get("session")
+	// Get user ID from JWT claims
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(401, gin.H{"error": "Not authenticated"})
 		return
 	}
 
-	sess := session.(*auth.Session)
+	userIDStr := userID.(string)
 	
 	// Get fresh user data
 	var user User
@@ -209,7 +206,7 @@ func GetCurrentUser(c *gin.Context) {
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
 		WHERE u.id = $1
-	`, sess.UserID).Scan(
+	`, userIDStr).Scan(
 		&user.ID, &user.Email, &user.Username,
 		&user.FirstName, &user.LastName, &user.RoleID, &user.Active,
 		&createdAt, &updatedAt, &roleName,
@@ -237,13 +234,14 @@ type ChangePasswordRequest struct {
 
 // ChangePassword handles password change for authenticated users
 func ChangePassword(c *gin.Context) {
-	session, exists := c.Get("session")
+	// Get user ID from JWT claims
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(401, gin.H{"error": "Not authenticated"})
 		return
 	}
 
-	sess := session.(*auth.Session)
+	userIDStr := userID.(string)
 
 	var req ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -255,7 +253,7 @@ func ChangePassword(c *gin.Context) {
 	var passwordHash string
 	err := database.DB.QueryRow(
 		"SELECT password_hash FROM users WHERE id = $1",
-		sess.UserID,
+		userIDStr,
 	).Scan(&passwordHash)
 
 	if err == sql.ErrNoRows {
@@ -284,7 +282,7 @@ func ChangePassword(c *gin.Context) {
 	// Update password and clear password_change_required flag
 	_, err = database.DB.Exec(
 		"UPDATE users SET password_hash = $1, password_change_required = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-		string(hashedPassword), sess.UserID,
+		string(hashedPassword), userIDStr,
 	)
 
 	if err != nil {

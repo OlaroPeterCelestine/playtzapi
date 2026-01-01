@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"playtz-api/auth"
 	"playtz-api/database"
 	"time"
 
@@ -29,8 +28,9 @@ type Stats struct {
 
 // GetAdminDashboard returns dashboard data based on user role
 func GetAdminDashboard(c *gin.Context) {
-	session, _ := c.Get("session")
-	sess := session.(*auth.Session)
+	// Get user ID from JWT claims
+	userID, _ := c.Get("user_id")
+	userIDStr := userID.(string)
 
 	// Get user details
 	var user User
@@ -43,7 +43,7 @@ func GetAdminDashboard(c *gin.Context) {
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
 		WHERE u.id = $1
-	`, sess.UserID).Scan(
+	`, userIDStr).Scan(
 		&user.ID, &user.Email, &user.Username,
 		&user.FirstName, &user.LastName, &user.RoleID, &user.Active,
 		&createdAt, &updatedAt, &roleName,
