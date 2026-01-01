@@ -11,3 +11,5 @@ echo "📊 Running database migrations..."
 echo "✅ Starting server..."
 exec ./main
 
+
+
