@@ -154,7 +154,7 @@ func main() {
 	// API v1 routes
 	api := r.Group("/api/v1")
 	{
-		// Auth routes (public)
+		// Auth routes (public - no auth required)
 		auth := api.Group("/auth")
 		{
 			auth.POST("/login", handlers.Login)
@@ -162,90 +162,119 @@ func main() {
 			auth.GET("/me", handlers.GetCurrentUserOptional) // Optional auth - returns 200 with null if not authenticated
 			auth.POST("/change-password", middleware.RequireAuth(), handlers.ChangePassword)
 		}
+	}
 
+	// Protected API routes - All require authentication
+	protected := r.Group("/api/v1")
+	protected.Use(middleware.RequireAuth())
+	{
 		// Admin API routes (protected)
-		apiAdmin := api.Group("/admin")
-		apiAdmin.Use(middleware.RequireAuth())
-		{
-			apiAdmin.GET("/dashboard", handlers.GetAdminDashboard)
-		}
+		protected.GET("/admin/dashboard", handlers.GetAdminDashboard)
 
-		// News routes
+		// News routes - All protected
+		protected.GET("/news", handlers.GetNews)
+		protected.GET("/news/:id", handlers.GetNewsByID)
+		protected.POST("/news", handlers.CreateNews)
+		protected.PUT("/news/:id", handlers.UpdateNews)
+		protected.DELETE("/news/:id", handlers.DeleteNews)
+
+		// Events routes - All protected
+		protected.GET("/events", handlers.GetEvents)
+		protected.GET("/events/:id", handlers.GetEventByID)
+		protected.POST("/events", handlers.CreateEvent)
+		protected.PUT("/events/:id", handlers.UpdateEvent)
+		protected.DELETE("/events/:id", handlers.DeleteEvent)
+
+		// Merchandise routes - All protected
+		protected.GET("/merch", handlers.GetMerch)
+		protected.GET("/merch/:id", handlers.GetMerchByID)
+		protected.POST("/merch", handlers.CreateMerch)
+		protected.PUT("/merch/:id", handlers.UpdateMerch)
+		protected.DELETE("/merch/:id", handlers.DeleteMerch)
+
+		// Careers routes - All protected
+		protected.GET("/careers", handlers.GetCareers)
+		protected.GET("/careers/:id", handlers.GetCareerByID)
+		protected.POST("/careers", handlers.CreateCareer)
+		protected.PUT("/careers/:id", handlers.UpdateCareer)
+		protected.DELETE("/careers/:id", handlers.DeleteCareer)
+
+		// News routes - All protected
 		api.GET("/news", handlers.GetNews)
-		api.POST("/news", handlers.CreateNews)
 		api.GET("/news/:id", handlers.GetNewsByID)
+		api.POST("/news", handlers.CreateNews)
 		api.PUT("/news/:id", handlers.UpdateNews)
 		api.DELETE("/news/:id", handlers.DeleteNews)
 
-		// Events routes
+		// Events routes - All protected
 		api.GET("/events", handlers.GetEvents)
-		api.POST("/events", handlers.CreateEvent)
 		api.GET("/events/:id", handlers.GetEventByID)
+		api.POST("/events", handlers.CreateEvent)
 		api.PUT("/events/:id", handlers.UpdateEvent)
 		api.DELETE("/events/:id", handlers.DeleteEvent)
 
-		// Merchandise routes
+		// Merchandise routes - All protected
 		api.GET("/merch", handlers.GetMerch)
-		api.POST("/merch", handlers.CreateMerch)
 		api.GET("/merch/:id", handlers.GetMerchByID)
+		api.POST("/merch", handlers.CreateMerch)
 		api.PUT("/merch/:id", handlers.UpdateMerch)
 		api.DELETE("/merch/:id", handlers.DeleteMerch)
 
-		// Careers routes
+		// Careers routes - All protected
 		api.GET("/careers", handlers.GetCareers)
-		api.POST("/careers", handlers.CreateCareer)
 		api.GET("/careers/:id", handlers.GetCareerByID)
+		api.POST("/careers", handlers.CreateCareer)
 		api.PUT("/careers/:id", handlers.UpdateCareer)
 		api.DELETE("/careers/:id", handlers.DeleteCareer)
 
-		// Shopping Cart routes
-		api.GET("/cart", handlers.GetCart)
-		api.POST("/cart/add", handlers.AddToCart)
-		api.PUT("/cart/update", handlers.UpdateCartItem)
-		api.DELETE("/cart/remove", handlers.RemoveFromCart)
-		api.DELETE("/cart/clear", handlers.ClearCart)
+		// Shopping Cart routes - All protected
+		protected.GET("/cart", handlers.GetCart)
+		protected.POST("/cart/add", handlers.AddToCart)
+		protected.PUT("/cart/update", handlers.UpdateCartItem)
+		protected.DELETE("/cart/remove", handlers.RemoveFromCart)
+		protected.DELETE("/cart/clear", handlers.ClearCart)
 
-		// Checkout and Orders routes
-		api.POST("/checkout", handlers.CreateOrder)
-		api.GET("/orders", handlers.GetOrders)
-		api.GET("/orders/:id", handlers.GetOrder)
-		api.PUT("/orders/:id/status", handlers.UpdateOrderStatus)
+		// Checkout and Orders routes - All protected
+		protected.POST("/checkout", handlers.CreateOrder)
+		protected.GET("/orders", handlers.GetOrders)
+		protected.GET("/orders/:id", handlers.GetOrder)
+		protected.PUT("/orders/:id/status", handlers.UpdateOrderStatus)
 
-		// Rooms routes
-		api.GET("/rooms", handlers.GetRooms)
-		api.POST("/rooms", handlers.CreateRoom)
-		api.GET("/rooms/:id", handlers.GetRoomByID)
-		api.PUT("/rooms/:id", handlers.UpdateRoom)
-		api.DELETE("/rooms/:id", handlers.DeleteRoom)
+		// Rooms routes - All protected
+		protected.GET("/rooms", handlers.GetRooms)
+		protected.GET("/rooms/:id", handlers.GetRoomByID)
+		protected.POST("/rooms", handlers.CreateRoom)
+		protected.PUT("/rooms/:id", handlers.UpdateRoom)
+		protected.DELETE("/rooms/:id", handlers.DeleteRoom)
 
-		// Mixes routes
-		api.GET("/mixes", handlers.GetMixes)
-		api.POST("/mixes", handlers.CreateMix)
-		api.GET("/mixes/:id", handlers.GetMixByID)
-		api.PUT("/mixes/:id", handlers.UpdateMix)
-		api.DELETE("/mixes/:id", handlers.DeleteMix)
-		api.POST("/mixes/:id/tracks", handlers.AddTrackToMix)
-		api.POST("/mixes/:id/tracks/bulk", handlers.AddTracksToMix)
-		api.DELETE("/mixes/:id/tracks", handlers.RemoveTrackFromMix)
+		// Mixes routes - All protected
+		protected.GET("/mixes", handlers.GetMixes)
+		protected.GET("/mixes/:id", handlers.GetMixByID)
+		protected.POST("/mixes", handlers.CreateMix)
+		protected.PUT("/mixes/:id", handlers.UpdateMix)
+		protected.DELETE("/mixes/:id", handlers.DeleteMix)
+		protected.POST("/mixes/:id/tracks", handlers.AddTrackToMix)
+		protected.POST("/mixes/:id/tracks/bulk", handlers.AddTracksToMix)
+		protected.DELETE("/mixes/:id/tracks", handlers.RemoveTrackFromMix)
 
-		// Upload routes
-		api.POST("/upload", handlers.UploadImage)
-		api.POST("/upload/multiple", handlers.UploadMultipleImages)
+		// Upload routes - All protected
+		protected.POST("/upload", handlers.UploadImage)
+		protected.POST("/upload/multiple", handlers.UploadMultipleImages)
 
-		// Users routes
-		api.GET("/users", handlers.GetUsers)
-		api.POST("/users", handlers.CreateUser)
-		api.GET("/users/:id", handlers.GetUserByID)
-		api.PUT("/users/:id", handlers.UpdateUser)
-		api.DELETE("/users/:id", handlers.DeleteUser)
-		api.PUT("/users/:id/role", handlers.UpdateUserRole)
+		// Users routes - All protected
+		protected.GET("/users", handlers.GetUsers)
+		protected.POST("/users", handlers.CreateUser)
+		protected.GET("/users/:id", handlers.GetUserByID)
+		protected.PUT("/users/:id", handlers.UpdateUser)
+		protected.DELETE("/users/:id", handlers.DeleteUser)
+		protected.PUT("/users/:id/role", handlers.UpdateUserRole)
 
-		// Roles routes
-		api.GET("/roles", handlers.GetRoles)
-		api.POST("/roles", handlers.CreateRole)
-		api.GET("/roles/:id", handlers.GetRoleByID)
-		api.PUT("/roles/:id", handlers.UpdateRole)
-		api.DELETE("/roles/:id", handlers.DeleteRole)
+		// Roles routes - All protected
+		protected.GET("/roles", handlers.GetRoles)
+		protected.POST("/roles", handlers.CreateRole)
+		protected.GET("/roles/:id", handlers.GetRoleByID)
+		protected.PUT("/roles/:id", handlers.UpdateRole)
+		protected.DELETE("/roles/:id", handlers.DeleteRole)
 	}
 
 	// Get port from environment or use default
