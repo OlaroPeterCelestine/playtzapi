@@ -114,8 +114,8 @@ func CreateOrder(c *gin.Context) {
 	shippingAddrJSON, _ := json.Marshal(checkout.ShippingAddress)
 
 	_, err = database.DB.Exec(
-		"INSERT INTO orders (id, user_id, total, status, shipping_address, payment_method) VALUES ($1, $2, $3, $4, $5, $6)",
-		orderID, checkout.UserID, total, "pending", string(shippingAddrJSON), checkout.PaymentMethod,
+		"INSERT INTO orders (id, user_id, total, status, shipping_address) VALUES ($1, $2, $3, $4, $5)",
+		orderID, checkout.UserID, total, "pending", string(shippingAddrJSON),
 	)
 
 	if err != nil {
@@ -172,9 +172,9 @@ func GetOrder(c *gin.Context) {
 	var shippingAddrJSON string
 	var createdAt, updatedAt time.Time
 	err := database.DB.QueryRow(
-		"SELECT id, user_id, total, status, shipping_address, payment_method, created_at, updated_at FROM orders WHERE id = $1",
+		"SELECT id, user_id, total, status, shipping_address, created_at, updated_at FROM orders WHERE id = $1",
 		id,
-	).Scan(&order.ID, &order.UserID, &order.Total, &order.Status, &shippingAddrJSON, &order.PaymentMethod, &createdAt, &updatedAt)
+	).Scan(&order.ID, &order.UserID, &order.Total, &order.Status, &shippingAddrJSON, &createdAt, &updatedAt)
 
 	if err == sql.ErrNoRows {
 		c.JSON(404, gin.H{"error": "Order not found"})
@@ -227,12 +227,12 @@ func GetOrders(c *gin.Context) {
 
 	if userID != "" {
 		rows, err = database.DB.Query(
-			"SELECT id, user_id, total, status, shipping_address, payment_method, created_at, updated_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC",
+			"SELECT id, user_id, total, status, shipping_address, created_at, updated_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC",
 			userID,
 		)
 	} else {
 		rows, err = database.DB.Query(
-			"SELECT id, user_id, total, status, shipping_address, payment_method, created_at, updated_at FROM orders ORDER BY created_at DESC",
+			"SELECT id, user_id, total, status, shipping_address, created_at, updated_at FROM orders ORDER BY created_at DESC",
 		)
 	}
 
@@ -247,7 +247,7 @@ func GetOrders(c *gin.Context) {
 		var order Order
 		var shippingAddrJSON string
 		var createdAt, updatedAt time.Time
-		err := rows.Scan(&order.ID, &order.UserID, &order.Total, &order.Status, &shippingAddrJSON, &order.PaymentMethod, &createdAt, &updatedAt)
+		err := rows.Scan(&order.ID, &order.UserID, &order.Total, &order.Status, &shippingAddrJSON, &createdAt, &updatedAt)
 		if err != nil {
 			continue
 		}
