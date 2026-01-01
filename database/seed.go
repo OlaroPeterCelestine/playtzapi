@@ -77,7 +77,22 @@ func SeedAdmin() error {
 	} else if err != nil {
 		return fmt.Errorf("error checking for admin user: %w", err)
 	} else {
-		log.Println("✅ Admin user exists")
+		// Admin user exists - ensure it has admin role and correct password
+		password := "admin123"
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		// Update admin user to ensure correct role and password
+		_, err = DB.Exec(
+			"UPDATE users SET role_id = $1, password_hash = $2, active = true, password_change_required = false, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
+			adminRoleID, string(hashedPassword), adminUserID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update admin user: %w", err)
+		}
+		log.Println("✅ Admin user exists - password reset to admin123 and role verified")
 	}
 
 	return nil
