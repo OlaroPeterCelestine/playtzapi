@@ -159,7 +159,7 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/logout", handlers.Logout)
-			auth.GET("/me", middleware.RequireAuth(), handlers.GetCurrentUser)
+			auth.GET("/me", handlers.GetCurrentUserOptional) // Optional auth - returns 200 with null if not authenticated
 			auth.POST("/change-password", middleware.RequireAuth(), handlers.ChangePassword)
 		}
 

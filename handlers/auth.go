@@ -117,7 +117,64 @@ func Logout(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Logged out successfully"})
 }
 
-// GetCurrentUser returns the current authenticated user
+// GetCurrentUserOptional returns the current authenticated user if available, or null if not authenticated
+// This prevents 401 errors on login page when checking auth status
+func GetCurrentUserOptional(c *gin.Context) {
+	// Try to get session from cookie or header
+	sessionID, err := c.Cookie("session_id")
+	if err != nil || sessionID == "" {
+		sessionID = c.GetHeader("X-Session-ID")
+	}
+
+	if sessionID == "" {
+		// Not authenticated - return 200 with null (not an error)
+		c.JSON(200, gin.H{"authenticated": false, "user": nil})
+		return
+	}
+
+	// Check if session exists
+	sessionStore := auth.GetSessionStore()
+	session, exists := sessionStore.GetSession(sessionID)
+	if !exists {
+		// Session invalid or expired - return 200 with null (not an error)
+		c.JSON(200, gin.H{"authenticated": false, "user": nil})
+		return
+	}
+
+	// Get fresh user data
+	var user User
+	var createdAt, updatedAt time.Time
+	var roleName *string
+
+	err = database.DB.QueryRow(`
+		SELECT u.id, u.email, u.username, u.first_name, u.last_name, 
+		       u.role_id, u.active, u.created_at, u.updated_at, r.name as role_name
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1
+	`, session.UserID).Scan(
+		&user.ID, &user.Email, &user.Username,
+		&user.FirstName, &user.LastName, &user.RoleID, &user.Active,
+		&createdAt, &updatedAt, &roleName,
+	)
+
+	if err != nil {
+		// Database error - return 200 with null (don't expose internal errors)
+		c.JSON(200, gin.H{"authenticated": false, "user": nil})
+		return
+	}
+
+	if roleName != nil {
+		user.RoleName = *roleName
+	}
+	user.CreatedAt = createdAt.Format(time.RFC3339)
+	user.UpdatedAt = updatedAt.Format(time.RFC3339)
+
+	// Authenticated - return user
+	c.JSON(200, gin.H{"authenticated": true, "user": user})
+}
+
+// GetCurrentUser returns the current authenticated user (requires auth)
 func GetCurrentUser(c *gin.Context) {
 	session, exists := c.Get("session")
 	if !exists {
