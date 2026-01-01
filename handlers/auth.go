@@ -104,15 +104,21 @@ func Login(c *gin.Context) {
 
 // Logout handles user logout
 func Logout(c *gin.Context) {
+	// Try to get session from cookie or header
 	sessionID, err := c.Cookie("session_id")
-	if err == nil && sessionID != "" {
+	if err != nil || sessionID == "" {
+		sessionID = c.GetHeader("X-Session-ID")
+	}
+
+	if sessionID != "" {
 		sessionStore := auth.GetSessionStore()
 		sessionStore.DeleteSession(sessionID)
 	}
 
-	// Clear cookie (with SameSite=None for cross-origin)
-	c.SetCookie("session_id", "", -1, "/", "", true, true)
-	c.Header("Set-Cookie", "session_id=; Path=/; Max-Age=-1; HttpOnly; Secure; SameSite=None")
+	// Clear cookie - use Header directly for cross-origin support
+	// Set multiple cookie clearing headers to ensure it works across browsers
+	c.Header("Set-Cookie", "session_id=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None")
+	c.Header("Set-Cookie", "session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None")
 
 	c.JSON(200, gin.H{"message": "Logged out successfully"})
 }

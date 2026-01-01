@@ -356,17 +356,25 @@
                     ? 'http://localhost:8080/api/v1'
                     : 'https://playtzapi-production.up.railway.app/api/v1';
                 
-                await fetch(`${API_BASE}/auth/logout`, {
+                const response = await fetch(`${API_BASE}/auth/logout`, {
                     method: 'POST',
                     credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
+                
+                if (!response.ok) {
+                    console.error('Logout failed:', response.status, response.statusText);
+                }
             } catch (error) {
                 console.error('Logout error:', error);
             }
+            
+            // Always redirect to login, even if logout request failed
             // Clear any local storage/session data
+            localStorage.clear();
+            sessionStorage.clear();
             window.location.href = '/admin/login';
         }
 
