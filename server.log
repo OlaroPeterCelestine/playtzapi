@@ -112,3 +112,5 @@ FATAL: Server failed to star[GIN] 2026/01/01 - 07:23:42 | 200 |       103.5µs |
 [GIN] 2026/01/01 - 07:32:32 | 401 |       5.458µs |             ::1 | GET      "/api/v1/auth/me"
 [GIN] 2026/01/01 - 07:32:32 | 401 |        38.5µs |             ::1 | GET      "/api/v1/auth/me"
 [GIN] 2026/01/01 - 07:32:47 | 204 |      11.375µs |             ::1 | OPTIONS  "/api/v1/auth/login"
+[GIN] 2026/01/01 - 07:39:59 | 204 |      44.542µs |             ::1 | OPTIONS  "/api/v1/auth/me"
+[GIN] 2026/01/01 - 07:40:01 | 401 |       75.75µs |             ::1 | GET      "/api/v1/auth/me"
