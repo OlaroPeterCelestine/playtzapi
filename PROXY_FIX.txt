@@ -1,0 +1,75 @@
+FIX PROXY 502 ERROR
+==================
+
+ISSUE:
+Your React app is using a proxy at http://localhost:3001/api/proxy/
+The proxy is returning 502 Bad Gateway.
+
+SOLUTION OPTIONS:
+
+Option 1: Fix Proxy Configuration
+----------------------------------
+Your React app likely has a proxy server (Next.js, Vite, or custom).
+Check your proxy configuration file:
+
+For Next.js (next.config.js):
+  rewrites: async () => [
+    {
+      source: '/api/proxy/:path*',
+      destination: 'https://playtzapi-production.up.railway.app/api/v1/:path*',
+    },
+  ],
+
+For Vite (vite.config.js):
+  server: {
+    proxy: {
+      '/api/proxy': {
+        target: 'https://playtzapi-production.up.railway.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/proxy/, '/api/v1'),
+      },
+    },
+  },
+
+Option 2: Connect Directly to Railway (RECOMMENDED)
+----------------------------------------------------
+Since CORS is fixed, you can connect directly:
+
+Change your React app to use:
+  https://playtzapi-production.up.railway.app/api/v1/auth/login
+
+Instead of:
+  http://localhost:3001/api/proxy/auth/login
+
+Example:
+  fetch('https://playtzapi-production.up.railway.app/api/v1/auth/login', {
+    method: 'POST',
+    credentials: 'include',  // CRITICAL!
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password })
+  })
+
+Option 3: Use Local Server for Development
+------------------------------------------
+Point your React app to local server:
+
+  http://localhost:8080/api/v1/auth/login
+
+This works if:
+  - Local server is running (go run main.go)
+  - CORS allows localhost:3001
+  - No proxy needed
+
+QUICK FIX:
+----------
+1. Update your React app's API base URL to:
+   https://playtzapi-production.up.railway.app/api/v1
+
+2. Remove /api/proxy/ from all API calls
+
+3. Ensure credentials: 'include' is set in all fetch requests
+
+4. Make sure Railway server is running (check Railway dashboard)
+

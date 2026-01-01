@@ -1,0 +1,66 @@
+HOW TO LOGIN TO RAILWAY API
+============================
+
+Login Endpoint:
+https://playtzapi-production.up.railway.app/api/v1/auth/login
+
+Method: POST
+Content-Type: application/json
+
+Request Body:
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+FROM REACT APP (http://localhost:3001):
+-----------------------------------------
+fetch('https://playtzapi-production.up.railway.app/api/v1/auth/login', {
+  method: 'POST',
+  credentials: 'include',  // CRITICAL: Must include this!
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    username: 'admin',
+    password: 'admin123'
+  })
+})
+.then(res => res.json())
+.then(data => {
+  if (data.success) {
+    console.log('Logged in!', data.user);
+    // Session cookie is automatically set
+  }
+});
+
+FROM TERMINAL (cURL):
+---------------------
+curl -X POST https://playtzapi-production.up.railway.app/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:3001" \
+  -d '{"username":"admin","password":"admin123"}' \
+  -c cookies.txt
+
+Success Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "session_id": "...",
+  "user": {
+    "id": "...",
+    "username": "admin",
+    "email": "admin@playtz.com",
+    "role_name": "Admin"
+  }
+}
+
+After Login:
+- Session cookie is automatically set
+- Use credentials: 'include' in all subsequent requests
+- Session expires after 10 minutes of inactivity
+
+Test Credentials:
+- Username: admin
+- Password: admin123
+
