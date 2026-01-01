@@ -128,15 +128,36 @@ func UploadImage(c *gin.Context) {
 
 	// Upload to Cloudinary with WebP format conversion
 	ctx := c.Request.Context()
+	
+	// Try upload without specifying both PublicID and Folder (Cloudinary may handle this better)
 	uploadResult, err := cld.Upload.Upload(ctx, fileReader, uploader.UploadParams{
 		PublicID:       uploadPath,
-		Folder:         folder,
 		Format:         "webp",
 		Transformation: "q_auto:good",
 	})
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Upload failed: " + err.Error()})
+		return
+	}
+
+	// Check if upload result is valid
+	if uploadResult == nil {
+		c.JSON(500, gin.H{"error": "Upload failed: empty response from Cloudinary"})
+		return
+	}
+
+	// Check for empty URLs - this indicates a Cloudinary API issue
+	if uploadResult.SecureURL == "" && uploadResult.URL == "" {
+		c.JSON(500, gin.H{
+			"error": "Upload failed: Cloudinary returned empty URLs. This usually indicates invalid credentials or account restrictions.",
+			"debug": map[string]interface{}{
+				"public_id": uploadResult.PublicID,
+				"has_url":   uploadResult.URL != "",
+				"has_secure_url": uploadResult.SecureURL != "",
+				"result_type": fmt.Sprintf("%T", uploadResult),
+			},
+		})
 		return
 	}
 
