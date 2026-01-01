@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100),
     role_id VARCHAR(50) REFERENCES roles(id),
     active BOOLEAN DEFAULT true,
+    password_change_required BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"playtz-api/database"
 	"time"
 
@@ -28,10 +30,17 @@ type User struct {
 type CreateUserRequest struct {
 	Email     string `json:"email"`
 	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Password  string `json:"password,omitempty"` // Optional - will generate default if not provided
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	RoleID    string `json:"role_id"`
+}
+
+// CreateUserResponse represents user creation response
+type CreateUserResponse struct {
+	User            User   `json:"user"`
+	DefaultPassword string `json:"default_password,omitempty"` // Only returned when default password is generated
+	Message         string `json:"message,omitempty"`
 }
 
 // GetUsers returns all users

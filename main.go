@@ -5,6 +5,7 @@ import (
 	"os"
 	"playtz-api/database"
 	"playtz-api/handlers"
+	"playtz-api/middleware"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -59,6 +60,10 @@ func main() {
 	config.AllowHeaders = []string{"Content-Type", "Authorization"}
 	r.Use(cors.New(config))
 
+	// Serve static files (HTML pages)
+	r.Static("/static", "./static")
+	r.LoadHTMLGlob("static/*.html")
+
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -86,9 +91,38 @@ func main() {
 		})
 	})
 
+	// Admin pages (public)
+	r.GET("/admin/login", func(c *gin.Context) {
+		c.HTML(200, "login.html", nil)
+	})
+
+	// Admin page routes (protected)
+	admin := r.Group("/admin")
+	admin.Use(middleware.RequireAuth())
+	{
+		admin.GET("/dashboard", func(c *gin.Context) {
+			c.HTML(200, "dashboard.html", nil)
+		})
+	}
+
 	// API v1 routes
 	api := r.Group("/api/v1")
 	{
+		// Auth routes (public)
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", handlers.Login)
+			auth.POST("/logout", handlers.Logout)
+			auth.GET("/me", middleware.RequireAuth(), handlers.GetCurrentUser)
+		}
+
+		// Admin API routes (protected)
+		apiAdmin := api.Group("/admin")
+		apiAdmin.Use(middleware.RequireAuth())
+		{
+			apiAdmin.GET("/dashboard", handlers.GetAdminDashboard)
+		}
+
 		// News routes
 		api.GET("/news", handlers.GetNews)
 		api.POST("/news", handlers.CreateNews)

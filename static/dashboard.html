@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Playtz 102.9</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info span {
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .content-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .content-list {
+            list-style: none;
+        }
+
+        .content-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-item:last-child {
+            border-bottom: none;
+        }
+
+        .content-item:hover {
+            background: #f9f9f9;
+        }
+
+        .content-item-title {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .content-item-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .session-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .session-warning.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Playtz 102.9 Admin Dashboard</h1>
+        <div class="user-info">
+            <span id="userName">Loading...</span>
+            <span id="userRole" style="opacity: 0.8;">-</span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="session-warning" id="sessionWarning">
+            Your session will expire soon. Please save your work.
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <div id="contentSections">
+            <!-- Content sections will be populated based on role -->
+        </div>
+    </div>
+
+    <script>
+        let sessionTimeout;
+        let warningTimeout;
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/v1/admin/dashboard', {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Update user info
+                document.getElementById('userName').textContent = data.user.username || data.user.email;
+                document.getElementById('userRole').textContent = data.user.role_name || 'User';
+
+                // Render stats
+                renderStats(data.stats);
+
+                // Render content based on role
+                renderContent(data);
+
+                // Reset session timeout
+                resetSessionTimeout();
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+
+        function renderStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            const statItems = [
+                { label: 'Total Users', value: stats.total_users },
+                { label: 'News Articles', value: stats.total_news },
+                { label: 'Events', value: stats.total_events },
+                { label: 'Merchandise', value: stats.total_merchandise },
+                { label: 'Total Orders', value: stats.total_orders },
+                { label: 'Pending Orders', value: stats.pending_orders }
+            ];
+
+            statsGrid.innerHTML = statItems.map(stat => `
+                <div class="stat-card">
+                    <h3>${stat.label}</h3>
+                    <div class="value">${stat.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderContent(data) {
+            const sections = document.getElementById('contentSections');
+            let html = '';
+
+            if (data.recent_news && data.recent_news.length > 0) {
+                html += `
+                    <div class="content-section">
+                        <h2>Recent News</h2>
+                        <ul class="content-list">
+                            ${data.recent_news.map(item => `
+                                <li class="content-item">
+                                    <div>
+                                        <div class="content-item-title">${item.title}</div>
+                                        <div class="content-item-meta">By ${item.author || 'Unknown'} • ${new Date(item.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                    <span style="color: ${item.published ? '#28a745' : '#ffc107'}; font-size: 12px;">
+                                        ${item.published ? 'Published' : 'Draft'}
+                                    </span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (data.recent_events && data.recent_events.length > 0) {
+                html += `
+                    <div class="content-section">
+                        <h2>Recent Events</h2>
+                        <ul class="content-list">
+                            ${data.recent_events.map(item => `
+                                <li class="content-item">
+                                    <div>
+                                        <div class="content-item-title">${item.title}</div>
+                                        <div class="content-item-meta">${item.location || 'No location'} • ${item.date || 'No date'}</div>
+                                    </div>
+                                    <span style="color: ${item.active ? '#28a745' : '#999'}; font-size: 12px;">
+                                        ${item.active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (data.recent_orders && data.recent_orders.length > 0) {
+                html += `
+                    <div class="content-section">
+                        <h2>Recent Orders</h2>
+                        <ul class="content-list">
+                            ${data.recent_orders.map(item => `
+                                <li class="content-item">
+                                    <div>
+                                        <div class="content-item-title">Order #${item.id.substring(0, 8)}</div>
+                                        <div class="content-item-meta">${new Date(item.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 600; color: #667eea;">$${item.total.toFixed(2)}</div>
+                                        <div style="font-size: 12px; color: #999; text-transform: capitalize;">${item.status}</div>
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (!html) {
+                html = '<div class="content-section"><div class="empty-state">No content available for your role.</div></div>';
+            }
+
+            sections.innerHTML = html;
+        }
+
+        function resetSessionTimeout() {
+            // Clear existing timeouts
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            if (warningTimeout) clearTimeout(warningTimeout);
+
+            // Show warning at 8 minutes (2 minutes before expiry)
+            warningTimeout = setTimeout(() => {
+                document.getElementById('sessionWarning').classList.add('show');
+            }, 8 * 60 * 1000);
+
+            // Logout at 10 minutes
+            sessionTimeout = setTimeout(() => {
+                alert('Your session has expired. You will be logged out.');
+                logout();
+            }, 10 * 60 * 1000);
+        }
+
+        // Reset timeout on user activity
+        ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetSessionTimeout, true);
+        });
+
+        async function logout() {
+            try {
+                await fetch('/api/v1/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            window.location.href = '/admin/login';
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        // Refresh dashboard every 30 seconds
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>
+

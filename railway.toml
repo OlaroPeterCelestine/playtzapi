@@ -6,7 +6,7 @@ builder = "nixpacks"
 buildCommand = "go mod download && go mod tidy && go build -o main ."
 
 [deploy]
-startCommand = "./main"
+startCommand = "chmod +x scripts/deploy.sh && ./scripts/deploy.sh || ./main"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
@@ -19,4 +19,17 @@ restartPolicyMaxRetries = 10
 # - CLOUDINARY_CLOUD_NAME
 # - CLOUDINARY_API_KEY
 # - CLOUDINARY_API_SECRET
+
+# Optional: Backup service configuration
+# To enable automated backups on Railway, create a separate service:
+# 1. In Railway dashboard: New → Empty Service
+# 2. Name it "backup-service"
+# 3. Set build command: "go mod download && go mod tidy && go build -o backup-scheduler cmd/backup-scheduler/main.go"
+# 4. Set start command: "./backup-scheduler"
+# 5. Add environment variable: DATABASE_URL (same as main service)
+# 6. The service will run continuously and backup every 10 minutes
+#
+# Alternative: Use Railway Scheduled Tasks (if available)
+# Schedule: */10 * * * *
+# Command: go run cmd/backup/main.go
 
