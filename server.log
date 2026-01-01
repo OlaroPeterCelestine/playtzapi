@@ -1,0 +1,71 @@
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> main.main.func1 (4 handlers)
+[GIN-debug] GET    /debug/cloudinary         --> main.main.func2 (4 handlers)
+[GIN-debug] GET    /api/v1/news              --> playtz-api/handlers.GetNews (4 handlers)
+[GIN-debug] POST   /api/v1/news              --> playtz-api/handlers.CreateNews (4 handlers)
+[GIN-debug] GET    /api/v1/news/:id          --> playtz-api/handlers.GetNewsByID (4 handlers)
+[GIN-debug] PUT    /api/v1/news/:id          --> playtz-api/handlers.UpdateNews (4 handlers)
+[GIN-debug] DELETE /api/v1/news/:id          --> playtz-api/handlers.DeleteNews (4 handlers)
+[GIN-debug] GET    /api/v1/events            --> playtz-api/handlers.GetEvents (4 handlers)
+[GIN-debug] POST   /api/v1/events            --> playtz-api/handlers.CreateEvent (4 handlers)
+[GIN-debug] GET    /api/v1/events/:id        --> playtz-api/handlers.GetEventByID (4 handlers)
+[GIN-debug] PUT    /api/v1/events/:id        --> playtz-api/handlers.UpdateEvent (4 handlers)
+[GIN-debug] DELETE /api/v1/events/:id        --> playtz-api/handlers.DeleteEvent (4 handlers)
+[GIN-debug] GET    /api/v1/merch             --> playtz-api/handlers.GetMerch (4 handlers)
+[GIN-debug] POST   /api/v1/merch             --> playtz-api/handlers.CreateMerch (4 handlers)
+[GIN-debug] GET    /api/v1/merch/:id         --> playtz-api/handlers.GetMerchByID (4 handlers)
+[GIN-debug] PUT    /api/v1/merch/:id         --> playtz-api/handlers.UpdateMerch (4 handlers)
+[GIN-debug] DELETE /api/v1/merch/:id         --> playtz-api/handlers.DeleteMerch (4 handlers)
+[GIN-debug] GET    /api/v1/careers           --> playtz-api/handlers.GetCareers (4 handlers)
+[GIN-debug] POST   /api/v1/careers           --> playtz-api/handlers.CreateCareer (4 handlers)
+[GIN-debug] GET    /api/v1/careers/:id       --> playtz-api/handlers.GetCareerByID (4 handlers)
+[GIN-debug] PUT    /api/v1/careers/:id       --> playtz-api/handlers.UpdateCareer (4 handlers)
+[GIN-debug] DELETE /api/v1/careers/:id       --> playtz-api/handlers.DeleteCareer (4 handlers)
+[GIN-debug] GET    /api/v1/cart              --> playtz-api/handlers.GetCart (4 handlers)
+[GIN-debug] POST   /api/v1/cart/add          --> playtz-api/handlers.AddToCart (4 handlers)
+[GIN-debug] PUT    /api/v1/cart/update       --> playtz-api/handlers.UpdateCartItem (4 handlers)
+[GIN-debug] DELETE /api/v1/cart/remove       --> playtz-api/handlers.RemoveFromCart (4 handlers)
+[GIN-debug] DELETE /api/v1/cart/clear        --> playtz-api/handlers.ClearCart (4 handlers)
+[GIN-debug] POST   /api/v1/checkout          --> playtz-api/handlers.CreateOrder (4 handlers)
+[GIN-debug] GET    /api/v1/orders            --> playtz-api/handlers.GetOrders (4 handlers)
+[GIN-debug] GET    /api/v1/orders/:id        --> playtz-api/handlers.GetOrder (4 handlers)
+[GIN-debug] PUT    /api/v1/orders/:id/status --> playtz-api/handlers.UpdateOrderStatus (4 handlers)
+[GIN-debug] GET    /api/v1/rooms             --> playtz-api/handlers.GetRooms (4 handlers)
+[GIN-debug] POST   /api/v1/rooms             --> playtz-api/handlers.CreateRoom (4 handlers)
+[GIN-debug] GET    /api/v1/rooms/:id         --> playtz-api/handlers.GetRoomByID (4 handlers)
+[GIN-debug] PUT    /api/v1/rooms/:id         --> playtz-api/handlers.UpdateRoom (4 handlers)
+[GIN-debug] DELETE /api/v1/rooms/:id         --> playtz-api/handlers.DeleteRoom (4 handlers)
+[GIN-debug] GET    /api/v1/mixes             --> playtz-api/handlers.GetMixes (4 handlers)
+[GIN-debug] POST   /api/v1/mixes             --> playtz-api/handlers.CreateMix (4 handlers)
+[GIN-debug] GET    /api/v1/mixes/:id         --> playtz-api/handlers.GetMixByID (4 handlers)
+[GIN-debug] PUT    /api/v1/mixes/:id         --> playtz-api/handlers.UpdateMix (4 handlers)
+[GIN-debug] DELETE /api/v1/mixes/:id         --> playtz-api/handlers.DeleteMix (4 handlers)
+[GIN-debug] POST   /api/v1/mixes/:id/tracks  --> playtz-api/handlers.AddTrackToMix (4 handlers)
+[GIN-debug] POST   /api/v1/mixes/:id/tracks/bulk --> playtz-api/handlers.AddTracksToMix (4 handlers)
+[GIN-debug] DELETE /api/v1/mixes/:id/tracks  --> playtz-api/handlers.RemoveTrackFromMix (4 handlers)
+[GIN-debug] POST   /api/v1/upload            --> playtz-api/handlers.UploadImage (4 handlers)
+[GIN-debug] POST   /api/v1/upload/multiple   --> playtz-api/handlers.UploadMultipleImages (4 handlers)
+[GIN-debug] GET    /api/v1/users             --> playtz-api/handlers.GetUsers (4 handlers)
+[GIN-debug] POST   /api/v1/users             --> playtz-api/handlers.CreateUser (4 handlers)
+[GIN-debug] GET    /api/v1/users/:id         --> playtz-api/handlers.GetUserByID (4 handlers)
+[GIN-debug] PUT    /api/v1/users/:id         --> playtz-api/handlers.UpdateUser (4 handlers)
+[GIN-debug] DELETE /api/v1/users/:id         --> playtz-api/handlers.DeleteUser (4 handlers)
+[GIN-debug] PUT    /api/v1/users/:id/role    --> playtz-api/handlers.UpdateUserRole (4 handlers)
+[GIN-debug] GET    /api/v1/roles             --> playtz-api/handlers.GetRoles (4 handlers)
+[GIN-debug] POST   /api/v1/roles             --> playtz-api/handlers.CreateRole (4 handlers)
+[GIN-debug] GET    /api/v1/roles/:id         --> playtz-api/handlers.GetRoleByID (4 handlers)
+[GIN-debug] PUT    /api/v1/roles/:id         --> playtz-api/handlers.UpdateRole (4 handlers)
+[GIN-debug] DELETE /api/v1/roles/:id         --> playtz-api/handlers.DeleteRole (4 handlers)
+🚀 Server starting on port 8080
+✅ Health check available at http://0.0.0.0:8080/health
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN-debug] [ERROR] listen tcp :8080: bind: address already in use
+FATAL: Server failed to start: listen tcp :8080: bind: address already in use
+exit status 1

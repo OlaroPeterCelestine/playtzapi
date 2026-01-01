@@ -1,0 +1,22 @@
+# Railway configuration for API service
+# This file configures the Go API deployment
+
+[build]
+builder = "nixpacks"
+buildCommand = "go mod download && go mod tidy && go build -o main ."
+
+[deploy]
+startCommand = "chmod +x deploy.sh && ./deploy.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+# Note: Environment variables should be set in Railway dashboard, not here
+# Required variables:
+# - DATABASE_URL (or DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
+# - PORT (automatically set by Railway)
+# - CLOUDINARY_CLOUD_NAME
+# - CLOUDINARY_API_KEY
+# - CLOUDINARY_API_SECRET
+
